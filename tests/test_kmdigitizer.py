@@ -186,8 +186,8 @@ class TestKMDigitizer(unittest.TestCase):
         self.assertEqual(self.d.find_element(By.ID, 'resultsCard').get_attribute('aria-live'), 'polite')
 
     def test_19_ipd_table_populated(self):
-        rows = self.d.find_elements(By.CSS_SELECTOR, '#ipdBody tr')
-        self.assertGreater(len(rows), 1, 'IPD preview table should have rows')
+        rows = self.d.find_elements(By.CSS_SELECTOR, '#ipdTable tbody tr')
+        self.assertGreater(len(rows), 0, 'IPD preview table should have data rows')
 
     def test_20_edge_single_point(self):
         """Single coordinate pair should not crash."""

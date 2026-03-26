@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- CSP: no unsafe-eval needed (no Plotly) -->
+  <!-- CSP: unsafe-inline for single-file; unsafe-eval required by Plotly -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plot.ly; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self';" />
   <title>KMDigitizer — Reconstruct IPD from Kaplan-Meier Curves</title>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
@@ -241,6 +241,8 @@ function parseAtRisk(textareaId) {
 function guyotReconstruct(coords, n0, atRisk, arm) {
   if (coords.length < 2 || n0 <= 0) return [];
 
+  // Defensive copy to avoid mutating caller's array
+  coords = [...coords];
   // Ensure starts at t=0, S=1
   if (coords[0].t > 0) coords.unshift({ t: 0, s: 1.0 });
 
@@ -313,9 +315,10 @@ function computeLogRankHR(ipd1, ipd2) {
     const n = n1 + n2;
     if (n === 0) continue;
 
-    // Events at time t
-    const d1 = ipd1.filter(r => r.time === t && r.event === 1).length;
-    const d2 = ipd2.filter(r => r.time === t && r.event === 1).length;
+    // Events at time t (tolerance-based comparison to avoid float === trap)
+    const eps = 1e-8;
+    const d1 = ipd1.filter(r => Math.abs(r.time - t) < eps && r.event === 1).length;
+    const d2 = ipd2.filter(r => Math.abs(r.time - t) < eps && r.event === 1).length;
     const d = d1 + d2;
 
     // Expected events in arm 1 under null
@@ -334,14 +337,23 @@ function computeLogRankHR(ipd1, ipd2) {
   const logHR = (O1 - E1) / V;
   const seLogHR = 1 / Math.sqrt(V);
   const hr = Math.exp(logHR);
-  const ciLo = Math.exp(logHR - 1.96 * seLogHR);
-  const ciHi = Math.exp(logHR + 1.96 * seLogHR);
+  const zCrit = normalQuantile(0.975); // 1.96 for 95% CI; derived not hardcoded
+  const ciLo = Math.exp(logHR - zCrit * seLogHR);
+  const ciHi = Math.exp(logHR + zCrit * seLogHR);
   const z = logHR / seLogHR;
 
   // Two-sided p-value
   const pVal = 2 * (1 - normalCDF(Math.abs(z)));
 
   return { hr: +hr.toFixed(3), ci: [+ciLo.toFixed(3), +ciHi.toFixed(3)], p: +pVal.toFixed(4), logHR, seLogHR };
+}
+
+function normalQuantile(p) {
+  if (p <= 0) return -Infinity; if (p >= 1) return Infinity; if (p === 0.5) return 0;
+  const pLow = p < 0.5 ? p : 1 - p;
+  const t = Math.sqrt(-2 * Math.log(pLow));
+  let z = t - (2.515517 + 0.802853*t + 0.010328*t*t) / (1 + 1.432788*t + 0.189269*t*t + 0.001308*t*t*t);
+  return p < 0.5 ? -z : z;
 }
 
 function normalCDF(x) {
@@ -434,12 +446,14 @@ function reconstruct() {
 
   // IPD preview table
   const preview = ipd.slice(0, 20);
-  document.getElementById('ipdBody').innerHTML =
-    '<tr><th>Time</th><th>Event</th><th>Arm</th></tr>' +
+  const tableEl = document.getElementById('ipdTable');
+  // Use proper thead + tbody structure for screen readers
+  tableEl.innerHTML =
+    '<thead><tr><th>Time</th><th>Event</th><th>Arm</th></tr></thead><tbody>' +
     preview.map(r =>
       '<tr><td class="num">' + r.time + '</td><td class="num">' + r.event +
       '</td><td>' + escapeHtml(r.arm) + '</td></tr>'
-    ).join('');
+    ).join('') + '</tbody>';
 
   window._lastIPD = { ipd, ipdTx, ipdCtrl, lr, totalN, totalEvents, medTx, medCtrl, txLabel, ctrlLabel };
 }
@@ -487,8 +501,11 @@ function renderKM(txCoords, ctrlCoords, txLabel, ctrlLabel) {
 function exportIPD() {
   if (!window._lastIPD) { alert('Reconstruct first.'); return; }
   const ipd = window._lastIPD.ipd;
+  // CSV-safe: guard formula injection on arm labels (do NOT include '-' per lessons.md)
+  function csvSafe(s) { s = String(s); return /^[=+@\t\r]/.test(s) ? "'" + s : s; }
+  function csvQuote(s) { s = csvSafe(s); return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s; }
   const header = 'time,event,arm';
-  const rows = ipd.map(r => r.time + ',' + r.event + ',' + escapeHtml(r.arm));
+  const rows = ipd.map(r => r.time + ',' + r.event + ',' + csvQuote(r.arm));
   const csv = [header, ...rows].join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
