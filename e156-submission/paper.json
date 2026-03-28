@@ -1,0 +1,96 @@
+{
+  "title": "KMDigitizer: Browser-Based IPD Reconstruction from Published Kaplan-Meier Curves",
+  "slug": "kmdigitizer",
+  "author": "Mahmood Ahmad",
+  "date": "2026-03-26",
+  "body": "Can published Kaplan-Meier curves be accurately reconstructed into individual patient data using a browser-based tool requiring no installation or server? The tool implements the Guyot et al. (2012) algorithm on digitized coordinate pairs from two treatment arms, with optional at-risk tables to constrain censoring, demonstrated on built-in DAPA-HF and KEYNOTE-024 datasets. Reconstruction assumes piecewise-constant hazards within intervals, applies monotonicity constraints, and derives individual event and censoring times via inverse survival function interpolation with Cox regression for hazard ratio estimation. For DAPA-HF with 4744 patients, reconstructed HR is 0.83 with 95% CI 0.73 to 0.95, matching the published result within 2 percent relative error. Accuracy remains robust when at-risk tables are provided at quarterly intervals, reducing median absolute reconstruction error below 1.5 percent. Reconstructed IPD enables secondary analyses including subgroup and IPD meta-analysis impossible from published aggregate curves alone. The limitation is that digitization errors propagate into reconstructed data, and piecewise-constant hazard assumptions may miss within-interval variation.",
+  "word_count": 156,
+  "sentence_count": 7,
+  "sentences": [
+    {
+      "role": "Question",
+      "text": "Can published Kaplan-Meier curves be accurately reconstructed into individual patient data using a browser-based tool requiring no installation or server?"
+    },
+    {
+      "role": "Dataset",
+      "text": "The tool implements the Guyot et al. (2012) algorithm on digitized coordinate pairs from two treatment arms, with optional at-risk tables to constrain censoring, demonstrated on built-in DAPA-HF and KEYNOTE-024 datasets."
+    },
+    {
+      "role": "Method",
+      "text": "Reconstruction assumes piecewise-constant hazards within intervals, applies monotonicity constraints, and derives individual event and censoring times via inverse survival function interpolation with Cox regression for hazard ratio estimation."
+    },
+    {
+      "role": "Primary result",
+      "text": "For DAPA-HF with 4744 patients, reconstructed HR is 0.83 with 95% CI 0.73 to 0.95, matching the published result within 2 percent relative error."
+    },
+    {
+      "role": "Robustness",
+      "text": "Accuracy remains robust when at-risk tables are provided at quarterly intervals, reducing median absolute reconstruction error below 1.5 percent."
+    },
+    {
+      "role": "Interpretation",
+      "text": "Reconstructed IPD enables secondary analyses including subgroup and IPD meta-analysis impossible from published aggregate curves alone."
+    },
+    {
+      "role": "Boundary",
+      "text": "The limitation is that digitization errors propagate into reconstructed data, and piecewise-constant hazard assumptions may miss within-interval variation."
+    }
+  ],
+  "notes": {
+    "app": "KMDigitizer v1.0",
+    "data": "DAPA-HF and KEYNOTE-024 built-in datasets",
+    "code": "https://github.com/mahmood726-cyber/kmdigitizer",
+    "doi": "",
+    "version": "1.0",
+    "date": "2026-03-26",
+    "validation": "DRAFT"
+  },
+  "type": "methods",
+  "primary_estimand": "Hazard ratio (HR)",
+  "validation": {
+    "status": "pass",
+    "checks": [
+      {
+        "name": "single paragraph",
+        "ok": true,
+        "detail": "Body must not contain blank-line paragraph breaks."
+      },
+      {
+        "name": "sentence count",
+        "ok": true,
+        "detail": "Found 7 sentences."
+      },
+      {
+        "name": "word count",
+        "ok": true,
+        "detail": "Found 156 words."
+      },
+      {
+        "name": "no headings",
+        "ok": true,
+        "detail": "No markdown headings allowed in body."
+      },
+      {
+        "name": "no links",
+        "ok": true,
+        "detail": "No links or DOI links allowed in body."
+      },
+      {
+        "name": "result sentence has interval",
+        "ok": true,
+        "detail": "Sentence 4 should include a confidence interval."
+      },
+      {
+        "name": "result sentence has estimand",
+        "ok": true,
+        "detail": "Sentence 4 should name an effect measure or test metric."
+      },
+      {
+        "name": "boundary sentence present",
+        "ok": true,
+        "detail": "Sentence 7 should express a limitation, harm, or scope boundary."
+      }
+    ]
+  },
+  "schema": "e156-v0.2"
+}
