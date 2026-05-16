@@ -1,4 +1,10 @@
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+PROGRESS.md
+
 # Sentinel pre-push hook output (auto-generated per session)
 STUCK_FAILURES.md
 STUCK_FAILURES.jsonl
