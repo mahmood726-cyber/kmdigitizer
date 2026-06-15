@@ -40,18 +40,19 @@ assert('A5 log-rank on TRUE IPD recovers theory log-HR within 0.05',
   Math.abs(study.meanLogHRtrue - study.theoryLogHR) < 0.05,
   'true ' + study.meanLogHRtrue + ' vs theory ' + study.theoryLogHR);
 
-// --- 4. HONEST NEGATIVE: reconstructed log-HR is materially attenuated ---
-// Events pile onto the ~13 digitization-grid time points (ties), biasing the
-// log-rank toward the null. We assert the bias is real and large (>0.1) so the
-// test FAILS loudly if a future change silently "fixes" the number without a
-// methodological correction (Guyot within-interval event spreading).
-assert('A6 reconstructed log-HR is attenuated toward null (bias > 0.10, honest negative)',
-  study.biasVsTrue > 0.10,
+// --- 4. FIXED: reconstructed log-HR is now unbiased vs the true sample log-HR ---
+// Root cause of the former attenuation was NOT event ties but the loop dropping
+// every patient still at risk at the final coordinate (~37% of the cohort),
+// which collapsed the risk set. guyotReconstruct now emits those survivors as
+// administratively censored at the last time, and spreads events within each
+// interval. Bias vs the true-IPD log-rank now sits within Monte-Carlo noise.
+assert('A6 reconstructed log-HR is unbiased vs true sample log-HR (|bias| < 0.05)',
+  Math.abs(study.biasVsTrue) < 0.05,
   'bias vs true = ' + study.biasVsTrue + ' (rec ' + study.meanLogHRrec + ' vs true ' + study.meanLogHRtrue + ')');
 
-// --- 5. consequence: HR-CI coverage of the true log-HR is far below 0.95 ---
-assert('A7 HR-CI under-covers true log-HR (coverage < 0.50, honest negative)',
-  study.hrCICoverage < 0.50,
+// --- 5. consequence: HR-CI coverage of the true log-HR is now near nominal ---
+assert('A7 HR-CI covers true log-HR near nominal (coverage > 0.90)',
+  study.hrCICoverage > 0.90,
   'coverage = ' + study.hrCICoverage + ' (nominal 0.95)');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

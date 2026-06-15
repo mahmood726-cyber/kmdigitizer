@@ -278,9 +278,12 @@ function guyotReconstruct(coords, n0, atRisk, arm) {
     const njNext = nRiskAt[t1] ?? Math.round(nj * condSurv);
     const cj = Math.max(0, nj - dj - njNext);
 
-    // Generate event records at the interval endpoint
+    // Generate event records distributed ACROSS the interval (Guyot 2012).
+    // Spread the dj events over (t0, t1] (last lands at t1, preserving the
+    // KM-step constraint S(t1)=s1) rather than stacking all at the endpoint.
     for (let i = 0; i < dj; i++) {
-      ipd.push({ time: t1, event: 1, arm });
+      const eTime = t0 + dt * (i + 1) / dj;
+      ipd.push({ time: +eTime.toFixed(4), event: 1, arm });
     }
 
     // Generate censoring records uniformly distributed in the interval
@@ -290,6 +293,15 @@ function guyotReconstruct(coords, n0, atRisk, arm) {
     }
 
     nAlive = njNext;
+  }
+
+  // Emit the patients still at risk at the LAST coordinate as administratively
+  // censored at that time. Without this the loop drops every survivor (here
+  // ~37% of the cohort), which collapses the risk set and is the dominant
+  // cause of the log-HR attenuation toward the null — NOT the event ties.
+  const lastT = coords[coords.length - 1].t;
+  for (let i = 0; i < nAlive; i++) {
+    ipd.push({ time: lastT, event: 0, arm });
   }
 
   return ipd;

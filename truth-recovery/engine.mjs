@@ -1,5 +1,8 @@
-// engine.mjs — pure functions extracted VERBATIM from kmdigitizer.html (lines 241-375)
-// Guyot et al. 2012 IPD reconstruction + log-rank HR. No edits to logic; only `export` appended.
+// engine.mjs — pure functions extracted from kmdigitizer.html (Guyot et al. 2012
+// IPD reconstruction + log-rank HR). Kept in lock-step with the HTML engine.
+// guyotReconstruct fix (truth-recovery): emit the survivors still at risk at the
+// final coordinate as administratively censored, and spread each interval's
+// events over (t0, t1]. The same edit is applied verbatim in kmdigitizer.html.
 function guyotReconstruct(coords, n0, atRisk, arm) {
   if (coords.length < 2 || n0 <= 0) return [];
 
@@ -40,9 +43,12 @@ function guyotReconstruct(coords, n0, atRisk, arm) {
     const njNext = nRiskAt[t1] ?? Math.round(nj * condSurv);
     const cj = Math.max(0, nj - dj - njNext);
 
-    // Generate event records at the interval endpoint
+    // Generate event records distributed ACROSS the interval (Guyot 2012).
+    // Spread the dj events over (t0, t1] (last lands at t1, preserving the
+    // KM-step constraint S(t1)=s1) rather than stacking all at the endpoint.
     for (let i = 0; i < dj; i++) {
-      ipd.push({ time: t1, event: 1, arm });
+      const eTime = t0 + dt * (i + 1) / dj;
+      ipd.push({ time: +eTime.toFixed(4), event: 1, arm });
     }
 
     // Generate censoring records uniformly distributed in the interval
@@ -52,6 +58,15 @@ function guyotReconstruct(coords, n0, atRisk, arm) {
     }
 
     nAlive = njNext;
+  }
+
+  // Emit the patients still at risk at the LAST coordinate as administratively
+  // censored at that time. Without this the loop drops every survivor (here
+  // ~37% of the cohort), which collapses the risk set and is the dominant
+  // cause of the log-HR attenuation toward the null — NOT the event ties.
+  const lastT = coords[coords.length - 1].t;
+  for (let i = 0; i < nAlive; i++) {
+    ipd.push({ time: lastT, event: 0, arm });
   }
 
   return ipd;
